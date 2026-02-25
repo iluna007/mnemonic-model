@@ -1,0 +1,131 @@
+.auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  padding: 2rem;
+}
+
+.auth-card {
+  width: 100%;
+  max-width: 380px;
+  padding: 1.75rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  background: rgba(15, 23, 42, 0.9);
+}
+
+.auth-card__title {
+  font-size: 1.35rem;
+  margin-bottom: 1rem;
+}
+
+.auth-card__warn {
+  color: #fcd34d;
+  font-size: 0.85rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.4;
+}
+
+.auth-card__warn code {
+  background: rgba(0, 0, 0, 0.3);
+  padding: 0.1rem 0.35rem;
+  border-radius: 0.25rem;
+  font-size: 0.8rem;
+}
+
+.auth-card__error {
+  color: #fecaca;
+  font-size: 0.9rem;
+  margin-bottom: 0.75rem;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.auth-form__label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.9rem;
+  color: #d1d5db;
+}
+
+.auth-form__input {
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(30, 41, 59, 0.8);
+  color: #e5e7eb;
+  font-size: 1rem;
+}
+
+.auth-form__input:focus {
+  outline: none;
+  border-color: #6366f1;
+}
+
+.auth-form__submit {
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border: none;
+  background: linear-gradient(120deg, #4f46e5, #6366f1);
+  color: white;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+.auth-form__submit:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-divider {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 0.85rem;
+  margin: 1rem 0;
+}
+
+.auth-google {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.6rem 1rem;
+  border-radius: 0.5rem;
+  border: 1px solid rgba(148, 163, 184, 0.5);
+  background: rgba(30, 41, 59, 0.6);
+  color: #e5e7eb;
+  font-size: 0.95rem;
+  cursor: pointer;
+}
+
+.auth-google:hover:not(:disabled) {
+  background: rgba(51, 65, 85, 0.8);
+}
+
+.auth-google:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.auth-google__icon {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.auth-card__footer {
+  margin-top: 1.25rem;
+  font-size: 0.9rem;
+  color: #9ca3af;
+}
+
+.auth-card__footer a {
+  color: #a5b4fc;
+}
