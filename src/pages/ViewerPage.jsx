@@ -16,7 +16,6 @@ function RhinoModel({ fileUrl }) {
     loader.load(
       fileUrl,
       (obj) => {
-        // Centralizar el modelo y ajustar escala básica
         const box = new THREE.Box3().setFromObject(obj)
         const size = box.getSize(new THREE.Vector3())
         const center = box.getCenter(new THREE.Vector3())
@@ -26,6 +25,10 @@ function RhinoModel({ fileUrl }) {
         if (maxAxis > 0) {
           obj.scale.multiplyScalar(2 / maxAxis)
         }
+
+        // Ajustar orientación: Rhino usa Z-up, convertimos a Y-up de Three.js
+        obj.rotation.x = -Math.PI / 2
+        obj.updateMatrixWorld(true)
 
         setObject(obj)
       },
@@ -60,6 +63,7 @@ export function ViewerPage() {
   const [fileUrl, setFileUrl] = useState(null)
   const [fileName, setFileName] = useState('')
   const [error, setError] = useState('')
+  const [panelOpen, setPanelOpen] = useState(true)
 
   const handleFiles = useCallback((files) => {
     const file = files?.[0]
@@ -99,26 +103,40 @@ export function ViewerPage() {
 
   return (
     <div className="viewer-layout">
+      <button
+        type="button"
+        className="dropzone-toggle"
+        onClick={() => setPanelOpen((open) => !open)}
+      >
+        {panelOpen ? 'Ocultar panel de carga' : 'Mostrar panel de carga'}
+      </button>
+
       <section
-        className="dropzone"
+        className={`dropzone-panel ${
+          panelOpen ? 'dropzone-panel--open' : 'dropzone-panel--closed'
+        }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
       >
-        <p className="dropzone__title">Arrastra y suelta tu archivo .3dm aquí</p>
-        <p className="dropzone__subtitle">o</p>
-        <label className="dropzone__button">
-          Seleccionar archivo
-          <input
-            type="file"
-            accept=".3dm"
-            onChange={handleInputChange}
-            style={{ display: 'none' }}
-          />
-        </label>
-        {fileName && (
-          <p className="dropzone__filename">Cargando: {fileName}</p>
-        )}
-        {error && <p className="dropzone__error">{error}</p>}
+        <div className="dropzone">
+          <p className="dropzone__title">
+            Arrastra y suelta tu archivo .3dm aquí
+          </p>
+          <p className="dropzone__subtitle">o</p>
+          <label className="dropzone__button">
+            Seleccionar archivo
+            <input
+              type="file"
+              accept=".3dm"
+              onChange={handleInputChange}
+              style={{ display: 'none' }}
+            />
+          </label>
+          {fileName && (
+            <p className="dropzone__filename">Cargando: {fileName}</p>
+          )}
+          {error && <p className="dropzone__error">{error}</p>}
+        </div>
       </section>
 
       <section className="viewer-canvas-wrapper">
