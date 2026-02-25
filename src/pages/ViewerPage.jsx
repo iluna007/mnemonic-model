@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Canvas } from '@react-three/fiber'
 import { OrbitControls, Environment } from '@react-three/drei'
 import * as THREE from 'three'
 import { Rhino3dmLoader } from 'three/addons/loaders/3DMLoader.js'
 
-function RhinoModel({ fileUrl }) {
+function RhinoModel({ fileUrl, layerVisibility, onLayersReady }) {
   const [object, setObject] = useState(null)
+  const layerObjectsRef = useRef({})
 
   useEffect(() => {
     if (!fileUrl) return
@@ -30,6 +31,42 @@ function RhinoModel({ fileUrl }) {
         obj.rotation.x = -Math.PI / 2
         obj.updateMatrixWorld(true)
 
+        // Construir mapa de capas a partir de los metadatos del modelo
+        const layersMeta = obj.userData?.layers || []
+        layerObjectsRef.current = {}
+        const layerInfoMap = {}
+
+        obj.traverse((child) => {
+          if (!child.isMesh) return
+          const layerIndex = child.userData?.attributes?.layerIndex
+          if (typeof layerIndex !== 'number') return
+
+          if (!layerObjectsRef.current[layerIndex]) {
+            layerObjectsRef.current[layerIndex] = []
+          }
+          layerObjectsRef.current[layerIndex].push(child)
+
+          if (!layerInfoMap[layerIndex]) {
+            const meta = layersMeta[layerIndex] || {}
+            layerInfoMap[layerIndex] = {
+              index: layerIndex,
+              name:
+                meta.name ||
+                meta.fullPath ||
+                `Capa ${Number(layerIndex) + 1}`,
+              visible: meta.visible !== false,
+            }
+          }
+        })
+
+        const layersArray = Object.values(layerInfoMap).sort(
+          (a, b) => a.index - b.index,
+        )
+
+        if (onLayersReady) {
+          onLayersReady(layersArray)
+        }
+
         setObject(obj)
       },
       undefined,
@@ -51,9 +88,23 @@ function RhinoModel({ fileUrl }) {
           }
         })
       }
+      layerObjectsRef.current = {}
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [fileUrl])
+
+  useEffect(() => {
+    if (!layerVisibility) return
+
+    Object.entries(layerObjectsRef.current).forEach(([index, meshes]) => {
+      const visible =
+        layerVisibility[index] !== undefined ? layerVisibility[index] : true
+      meshes.forEach((mesh) => {
+        // eslint-disable-next-line no-param-reassign
+        mesh.visible = visible
+      })
+    })
+  }, [layerVisibility])
 
   if (!object) return null
   return <primitive object={object} />
@@ -64,6 +115,7 @@ export function ViewerPage() {
   const [fileName, setFileName] = useState('')
   const [error, setError] = useState('')
   const [panelOpen, setPanelOpen] = useState(true)
+  const [layers, setLayers] = useState([])
 
   const handleFiles = useCallback((files) => {
     const file = files?.[0]
@@ -101,6 +153,25 @@ export function ViewerPage() {
     handleFiles(files)
   }
 
+  const toggleLayerVisibility = (layerIndex) => {
+    setLayers((prev) =>
+      prev.map((layer) =>
+        layer.index === layerIndex
+          ? { ...layer, visible: !layer.visible }
+          : layer,
+      ),
+    )
+  }
+
+  const layerVisibilityMap = useMemo(
+    () =>
+      layers.reduce((acc, layer) => {
+        acc[layer.index] = layer.visible
+        return acc
+      }, {}),
+    [layers],
+  )
+
   return (
     <div className="viewer-layout">
       <button
@@ -137,6 +208,28 @@ export function ViewerPage() {
           )}
           {error && <p className="dropzone__error">{error}</p>}
         </div>
+
+        {layers.length > 0 && (
+          <div className="layers-panel">
+            <p className="layers-panel__title">Capas del modelo</p>
+            <ul className="layers-list">
+              {layers.map((layer) => (
+                <li key={layer.index} className="layers-list__item">
+                  <label className="layers-list__label">
+                    <input
+                      type="checkbox"
+                      checked={layer.visible}
+                      onChange={() => toggleLayerVisibility(layer.index)}
+                    />
+                    <span className="layers-list__name">
+                      {layer.name || `Capa ${layer.index + 1}`}
+                    </span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </section>
 
       <section className="viewer-canvas-wrapper">
@@ -153,7 +246,11 @@ export function ViewerPage() {
           />
           <Environment preset="city" />
           {fileUrl ? (
-            <RhinoModel fileUrl={fileUrl} />
+            <RhinoModel
+              fileUrl={fileUrl}
+              layerVisibility={layerVisibilityMap}
+              onLayersReady={setLayers}
+            />
           ) : (
             <mesh>
               <boxGeometry args={[1, 1, 1]} />
