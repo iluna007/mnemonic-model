@@ -26,7 +26,9 @@ VITE_SUPABASE_ANON_KEY=tu-anon-key
 
 ## 2. Base de datos
 
-En el **SQL Editor** de Supabase, ejecuta el contenido del archivo `supabase/schema.sql` (tablas `models`, `comments`, `profiles`, políticas RLS).
+**Empezar de cero:** Si quieres borrar todo y recrear las tablas, ejecuta primero `supabase/reset.sql` en el SQL Editor y después `supabase/schema.sql`.
+
+**Instalación normal:** En el **SQL Editor** de Supabase, ejecuta el contenido de `supabase/schema.sql` (tablas `models`, `comments`, `profiles`, políticas RLS y trigger de perfiles).
 
 ## 3. Storage (archivos .3dm)
 

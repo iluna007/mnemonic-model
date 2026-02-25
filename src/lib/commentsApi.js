@@ -1,23 +1,63 @@
 import { supabase } from './supabase'
 
-/** Comentarios de un modelo (con autor si hay profiles) */
-export async function getCommentsByModelId(modelId) {
+/** Crea o actualiza el perfil del usuario actual (nickname para comentarios) */
+export async function upsertMyProfile(userId, displayName) {
+  if (!userId) return
+  const { error } = await supabase.from('profiles').upsert(
+    {
+      id: userId,
+      display_name: displayName || null,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'id' },
+  )
+  if (error) console.warn('upsertMyProfile', error.message)
+}
+
+/** Perfiles por lista de ids (para mostrar nombre en comentarios) */
+export async function getProfilesByIds(ids) {
+  if (!ids?.length) return []
   const { data, error } = await supabase
+    .from('profiles')
+    .select('id, display_name')
+    .in('id', ids)
+  if (error) return []
+  return data || []
+}
+
+/** Comentarios de un modelo con display_name del autor (desde profiles) */
+export async function getCommentsWithAuthors(modelId) {
+  const { data: comments, error } = await supabase
     .from('comments')
-    .select(
-      `
-      id,
-      position,
-      body,
-      created_at,
-      user_id
-    `,
-    )
+    .select('id, position, body, created_at, user_id')
     .eq('model_id', modelId)
     .order('created_at', { ascending: true })
 
   if (error) throw error
-  return data
+  if (!comments?.length) return []
+
+  const userIds = [...new Set(comments.map((c) => c.user_id).filter(Boolean))]
+  const profiles = await getProfilesByIds(userIds)
+  const byId = Object.fromEntries(
+    (profiles || []).map((p) => [p.id, p.display_name || 'Usuario']),
+  )
+
+  return comments.map((c) => ({
+    ...c,
+    display_name: byId[c.user_id] || 'Usuario',
+  }))
+}
+
+/** Comentarios de un modelo (solo datos, sin autores) */
+export async function getCommentsByModelId(modelId) {
+  const { data, error } = await supabase
+    .from('comments')
+    .select('id, position, body, created_at, user_id')
+    .eq('model_id', modelId)
+    .order('created_at', { ascending: true })
+
+  if (error) throw error
+  return data || []
 }
 
 /** Inserta un comentario (posición {x,y,z}, body, model_id; user_id desde sesión) */

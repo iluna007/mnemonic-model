@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { upsertMyProfile } from '../lib/commentsApi'
 
 const AuthContext = createContext(null)
 
@@ -12,6 +13,9 @@ export function AuthProvider({ children }) {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s)
       setUser(s?.user ?? null)
+      if (s?.user?.user_metadata?.display_name || s?.user?.user_metadata?.full_name) {
+        upsertMyProfile(s.user.id, s.user.user_metadata?.display_name || s.user.user_metadata?.full_name)
+      }
       setLoading(false)
     })
 
@@ -20,6 +24,12 @@ export function AuthProvider({ children }) {
     } = supabase.auth.onAuthStateChange((_event, s) => {
       setSession(s)
       setUser(s?.user ?? null)
+      if (s?.user) {
+        const name =
+          s.user.user_metadata?.display_name ||
+          s.user.user_metadata?.full_name
+        if (name) upsertMyProfile(s.user.id, name)
+      }
     })
 
     return () => subscription.unsubscribe()

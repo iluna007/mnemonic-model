@@ -94,7 +94,17 @@ export function NavBar() {
                       onClick={() => setMenuOpen(false)}
                     />
                     <div className="navbar__dropdown">
-                      <p className="navbar__dropdown-email">{user?.email}</p>
+                      <p className="navbar__dropdown-name">
+                        {user?.user_metadata?.display_name ||
+                          user?.user_metadata?.full_name ||
+                          user?.email}
+                      </p>
+                      {user?.user_metadata?.display_name &&
+                        user?.email && (
+                          <p className="navbar__dropdown-email">
+                            {user.email}
+                          </p>
+                        )}
                       <button
                         type="button"
                         className="navbar__dropdown-item"

@@ -52,11 +52,19 @@
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
 }
 
-.navbar__dropdown-email {
+.navbar__dropdown-name {
   padding: 0.5rem 1rem;
-  font-size: 0.85rem;
-  color: #9ca3af;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #e5e7eb;
+  margin: 0;
   border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.navbar__dropdown-email {
+  padding: 0.25rem 1rem 0.5rem;
+  font-size: 0.8rem;
+  color: #9ca3af;
   margin: 0;
 }
 

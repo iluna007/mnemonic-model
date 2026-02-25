@@ -6,6 +6,7 @@ import './AuthPages.css'
 
 export function RegisterPage() {
   const [email, setEmail] = useState('')
+  const [nickname, setNickname] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -16,6 +17,10 @@ export function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setError('')
+    if (!nickname.trim()) {
+      setError('Elige un nombre de usuario (nickname)')
+      return
+    }
     if (password !== confirmPassword) {
       setError('Las contraseñas no coinciden')
       return
@@ -26,7 +31,9 @@ export function RegisterPage() {
     }
     setLoading(true)
     try {
-      await signUpWithEmail(email, password)
+      await signUpWithEmail(email, password, {
+        display_name: nickname.trim(),
+      })
       navigate('/', { replace: true })
     } catch (err) {
       setError(getAuthErrorMessage(err))
@@ -62,6 +69,20 @@ export function RegisterPage() {
         {error && <p className="auth-card__error">{error}</p>}
 
         <form onSubmit={handleSubmit} className="auth-form">
+          <label className="auth-form__label">
+            Nombre de usuario (nickname)
+            <input
+              type="text"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+              className="auth-form__input"
+              required
+              minLength={2}
+              maxLength={50}
+              placeholder="Cómo te verán en los comentarios"
+              autoComplete="username"
+            />
+          </label>
           <label className="auth-form__label">
             Correo
             <input

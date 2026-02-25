@@ -13,9 +13,10 @@ import {
   MAX_UPLOAD_SIZE_MB,
 } from '../lib/modelsApi'
 import {
-  getCommentsByModelId,
+  getCommentsWithAuthors,
   addComment as addCommentApi,
 } from '../lib/commentsApi'
+import { getColorForUserId } from '../lib/userColor'
 
 /** Detecta rotación/pan/zoom en el canvas y notifica el modo para cambiar el cursor */
 function ViewerCursorController({ onCursorModeChange }) {
@@ -177,24 +178,35 @@ function RhinoModel({
   )
 }
 
-/** Marcadores 3D de comentarios en el modelo */
+/** Marcadores 3D de comentarios (color por usuario) */
 function CommentMarkers({ comments, onSelectComment }) {
   if (!comments?.length) return null
   return (
     <group>
-      {comments.map((c) => (
-        <mesh
-          key={c.id}
-          position={[c.position?.x ?? 0, c.position?.y ?? 0, c.position?.z ?? 0]}
-          onClick={(e) => {
-            e.stopPropagation()
-            onSelectComment(c)
-          }}
-        >
-          <sphereGeometry args={[0.04, 16, 16]} />
-          <meshStandardMaterial color="#f59e0b" emissive="#b45309" />
-        </mesh>
-      ))}
+      {comments.map((c) => {
+        const color = getColorForUserId(c.user_id)
+        return (
+          <mesh
+            key={c.id}
+            position={[
+              c.position?.x ?? 0,
+              c.position?.y ?? 0,
+              c.position?.z ?? 0,
+            ]}
+            onClick={(e) => {
+              e.stopPropagation()
+              onSelectComment(c)
+            }}
+          >
+            <sphereGeometry args={[0.04, 16, 16]} />
+            <meshStandardMaterial
+              color={color}
+              emissive={color}
+              emissiveIntensity={0.4}
+            />
+          </mesh>
+        )
+      })}
     </group>
   )
 }
@@ -254,7 +266,7 @@ export function ViewerPage() {
     return () => { cancelled = true }
   }, [modelId])
 
-  // Cargar comentarios cuando hay modelo subido
+  // Cargar comentarios con autores cuando hay modelo subido
   useEffect(() => {
     if (!modelId) {
       setComments([])
@@ -262,7 +274,7 @@ export function ViewerPage() {
     }
     let cancelled = false
     setCommentsLoading(true)
-    getCommentsByModelId(modelId)
+    getCommentsWithAuthors(modelId)
       .then((data) => {
         if (!cancelled) setComments(data)
       })
@@ -277,7 +289,7 @@ export function ViewerPage() {
 
   const refreshComments = useCallback(() => {
     if (!modelId) return
-    getCommentsByModelId(modelId).then(setComments)
+    getCommentsWithAuthors(modelId).then(setComments)
   }, [modelId])
 
   const handleFiles = useCallback((files) => {
@@ -394,7 +406,9 @@ export function ViewerPage() {
   }, [selectedFile, user, navigate])
 
   return (
-    <div className="viewer-layout">
+    <div
+      className={`viewer-layout ${isViewingUploadedModel && comments.length > 0 ? 'viewer-layout--with-comments' : ''}`}
+    >
       <div className="viewer-toolbar">
         <button
           type="button"
@@ -562,6 +576,39 @@ export function ViewerPage() {
         </Canvas>
       </section>
 
+      {isViewingUploadedModel && comments.length > 0 && (
+        <aside className="comments-chat-panel">
+          <h3 className="comments-chat-panel__title">Comentarios</h3>
+          <ul className="comments-chat-panel__list">
+            {comments.map((c) => (
+              <li
+                key={c.id}
+                className="comments-chat-panel__item"
+                onClick={() => handleViewComment(c)}
+              >
+                <span
+                  className="comments-chat-panel__dot"
+                  style={{ background: getColorForUserId(c.user_id) }}
+                  aria-hidden
+                />
+                <div className="comments-chat-panel__content">
+                  <span className="comments-chat-panel__author">
+                    {c.display_name || 'Usuario'}
+                  </span>
+                  <span className="comments-chat-panel__date">
+                    {new Date(c.created_at).toLocaleString('es', {
+                      dateStyle: 'short',
+                      timeStyle: 'short',
+                    })}
+                  </span>
+                  <p className="comments-chat-panel__body">{c.body}</p>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </aside>
+      )}
+
       {commentModal && (
         <CommentModal
           mode={commentModal.type}
@@ -627,12 +674,21 @@ function CommentModal({ mode, point, comment, onSubmit, onClose }) {
         ) : (
           <div>
             <p className="modal__title">Comentario</p>
-            <p className="modal__body">{comment?.body}</p>
             <p className="modal__meta">
-              {comment?.created_at
-                ? new Date(comment.created_at).toLocaleString()
-                : ''}
+              {comment?.display_name && (
+                <strong>{comment.display_name}</strong>
+              )}
+              {comment?.created_at && (
+                <>
+                  {' · '}
+                  {new Date(comment.created_at).toLocaleString('es', {
+                    dateStyle: 'short',
+                    timeStyle: 'short',
+                  })}
+                </>
+              )}
             </p>
+            <p className="modal__body">{comment?.body}</p>
             <button type="button" className="modal__btn modal__btn--primary" onClick={onClose}>
               Cerrar
             </button>
